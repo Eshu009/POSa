@@ -130,7 +130,11 @@ function paintNew() {
 function paintAll() {
   const list = visible();
   $('#grid-all').innerHTML = list.map((p) => card(p)).join('');
-  $('#empty').hidden = list.length > 0 || state.products.length === 0;
+  const e = $('#empty');
+  e.hidden = list.length > 0;
+  e.textContent = state.products.length === 0
+    ? 'The collection is being stocked — check back soon, or message us on WhatsApp.'
+    : 'Nothing matches that. Try another word, or clear the search.';
   $('#cat-title').textContent = state.cat || 'Everything';
 }
 
