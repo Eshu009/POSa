@@ -1,10 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.netlify.silpapos.twa",
-    "sha256_cert_fingerprints": [
-      "REPLACE_WITH_THE_FINGERPRINT_FROM_PWABUILDER"
-    ]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.silpapos.twa",
+        "sha256_cert_fingerprints": ["7A:91:26:24:88:C1:E1:31:DF:6A:9D:1B:0C:B9:95:BC:1B:87:85:6C:2F:7A:32:F6:5C:50:EE:7C:89:11:FB:D3"]
+      }
+    }]
