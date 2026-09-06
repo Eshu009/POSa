@@ -147,7 +147,8 @@ export function receiptHTML(s) {
   const line = (l) => `<tr><td colspan="3">${esc(l.name)}</td></tr>
     <tr><td>${n(l.qty)} x ${n(l.price).toFixed(2)}</td><td></td><td class="r">${n(l.total).toFixed(2)}</td></tr>`;
   const row = (k, v) => `<tr><td colspan="2">${k}</td><td class="r">${v}</td></tr>`;
-  const payLabel = { cash: 'Cash', upi: 'UPI', card: 'Card', split: 'Cash + Online' }[s.payment_mode] || s.payment_mode;
+  const payLabel = { cash: 'Cash', upi: 'UPI', card: 'Card', split: 'Cash + Online',
+                     cod: 'Cash on delivery', razorpay: 'Paid online' }[s.payment_mode] || s.payment_mode;
 
   return `<div class="receipt w${st.receiptWidth}">
     <h2>${esc(st.shopName)}</h2>

@@ -30,9 +30,13 @@ function paint() {
   const gross = sum(ok, (x) => x.subtotal);
   const disc = sum(ok, (x) => x.discount);
   const net = sum(ok, (x) => x.total);
-  const cashSales = sum(ok, (x) => x.paid_cash);
-  const online = sum(ok, (x) => x.paid_online);
-  const pieces = sum(ok, (x) => sum(x.sale_items, (i) => i.qty));
+  const counter = ok.filter((x) => x.source !== 'online');
+  const web     = ok.filter((x) => x.source === 'online');
+  const cashSales = sum(counter, (x) => x.paid_cash);
+  const codCash   = sum(web,     (x) => x.paid_cash);
+  const online    = sum(ok, (x) => x.paid_online);
+  const webTotal  = sum(web, (x) => x.total);
+  const pieces = sum(ok, (x) => sum(x.sale_items.filter((i) => i.product_id != null), (i) => i.qty));
 
   const card = (label, val, hi) =>
     `<div class="c ${hi ? 'hi' : ''}"><span class="muted small">${label}</span><b>${val}</b></div>`;
@@ -42,27 +46,29 @@ function paint() {
     card('Gross', money(gross)) +
     card('Discount', money(disc)) +
     card('Net sales', money(net), true) +
-    card('Cash', money(cashSales)) +
-    card('UPI / Card', money(online));
+    card('Counter cash', money(cashSales)) +
+    card('UPI / Card', money(online)) +
+    card(`Online orders (${web.length})`, money(webTotal));
 
-  paintCash(cashSales);
+  paintCash(cashSales, codCash);
   paintBills();
   paintLow();
 }
 
-function paintCash(cashSales) {
+function paintCash(cashSales, codCash = 0) {
   const kind = (k) => cash.filter((e) => e.kind === k);
   const opening = sum(kind('opening'), (e) => e.amount);
   const inn = sum(kind('in'), (e) => e.amount);
   const out = sum(kind('out'), (e) => e.amount);
   const counted = kind('close').at(-1)?.amount;
-  const expected = round2(opening + cashSales + inn - out);
+  const expected = round2(opening + cashSales + codCash + inn - out);
   const variance = counted == null ? null : round2(+counted - expected);
 
   const line = (k, v, cls = '') => `<div class="row ${cls}"><span class="nm">${k}</span><b>${v}</b></div>`;
   $('#rp-cash').innerHTML = `<div class="list">
     ${line('Opening cash', money(opening))}
-    ${line('+ Cash sales', money(cashSales))}
+    ${line('+ Cash sales (counter)', money(cashSales))}
+    ${codCash ? line('+ COD delivered (online)', money(codCash)) : ''}
     ${inn ? line('+ Other cash in', money(inn)) : ''}
     ${out ? line('&minus; Expenses / cash out', money(out)) : ''}
     ${line('<b>Expected in drawer</b>', money(expected))}
@@ -80,7 +86,7 @@ function paintCash(cashSales) {
 function paintBills() {
   $('#rp-bills').innerHTML = sales.length ? sales.map((s) => `
     <div class="row ${s.status === 'returned' ? 'void' : ''}" data-bill="${s.id}">
-      <span class="nm">${esc(s.bill_no)}
+      <span class="nm">${esc(s.bill_no)}${s.source === 'online' ? ' <span class="pill st-shipped">online</span>' : ''}
         <span class="sub">${fmtTime(s.created_at)} · ${s.sale_items.length} item(s) · ${esc(s.payment_mode)}${s.customer_name ? ' · ' + esc(s.customer_name) : ''}</span>
       </span>
       <b>${money(s.total)}</b>

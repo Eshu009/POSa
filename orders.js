@@ -11,7 +11,7 @@ const VERB  = { confirmed: 'Confirm & take stock', packed: 'Mark packed', shippe
 
 // ------------------------------------------------------------------ data
 async function load() {
-  let q = sb.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }).limit(200);
+  let q = sb.from('orders').select('*, order_items(*), sales(bill_no)').order('created_at', { ascending: false }).limit(200);
   if (filter !== 'all') q = q.eq('status', filter);
   const { data, error } = await q;
   if (error) return toast(error.message, true);
@@ -48,7 +48,8 @@ function openOrder(o) {
   const next = NEXT[o.status];
   const wa = o.customer_phone.replace(/\D/g, '');
   modal(`<h3>${esc(o.order_no)} <span class="pill st-${o.status}">${LABEL[o.status]}</span></h3>
-    <p class="muted small">${fmtTime(o.created_at)}${o.handled_by ? ' · last touched by ' + esc(o.handled_by) : ''}</p>
+    <p class="muted small">${fmtTime(o.created_at)}${o.handled_by ? ' · last touched by ' + esc(o.handled_by) : ''}
+      ${o.sales?.[0]?.bill_no ? ` · recorded as bill <b>${esc(o.sales[0].bill_no)}</b> — it is in Reports` : ''}</p>
 
     <div class="list">
       <div class="row"><span class="nm">${esc(o.customer_name)}
@@ -92,12 +93,12 @@ function openOrder(o) {
     const status = a === 'cancel' ? 'cancelled' : e.target.dataset.st;
     if (a === 'cancel' && !confirm(`Cancel ${o.order_no}?${o.stock_taken ? ' Stock goes back to the shelf.' : ''}`)) return;
     e.target.disabled = true;
-    const { error } = await sb.rpc('set_order_status', {
+    const { data, error } = await sb.rpc('set_order_status', {
       p_order_id: o.id, p_status: status, p_actor: store.user?.email?.split('@')[0] || null,
     });
     if (error) { e.target.disabled = false; return toast(error.message, true); }
     closeModal();
-    toast(`${o.order_no} → ${LABEL[status]}`);
+    toast(data?.bill_no ? `${o.order_no} delivered · bill ${data.bill_no} is in Reports` : `${o.order_no} → ${LABEL[status]}`);
     await Promise.all([loadProducts(), load(), pollNew()]);
   };
 }

@@ -70,7 +70,13 @@ with a badge on the tab. From there:
 1. **Confirm** — call the customer (their number is one tap away), then confirm.
    This is the moment stock leaves the shelf.
 2. **Packed → Shipped → Delivered.** Print a packing slip from the same screen.
-3. **Cancel** — owner only. If the order was already confirmed, stock goes back.
+3. **Delivered is money in.** The order becomes a bill: it appears in Reports that
+   day, counts in net sales and pieces sold, and can be reprinted or returned like
+   any counter bill. COD is counted as cash in the cash book on the day it is
+   delivered — if a courier collected it and has not paid you yet, the drawer
+   shows that amount as short until they do, which is the truth.
+4. **Cancel** — owner only, and only before delivery. If the order was already
+   confirmed, stock goes back. After delivery, use **Return** on the bill in Reports.
 
 Payment is cash-on-delivery for now. Razorpay slots into `payment_mode` /
 `payment_ref` / `payment_status` on the order — those columns are already there.

@@ -46,6 +46,10 @@ create table if not exists sales (
   cashier        text
 );
 create index if not exists sales_created_idx on sales (created_at desc);
+-- a bill is either rung up at the counter or a delivered online order
+alter table sales add column if not exists source   text not null default 'counter';
+alter table sales add column if not exists order_id bigint;
+create unique index if not exists sales_order_uidx on sales (order_id) where order_id is not null;
 
 create table if not exists sale_items (
   id         bigint generated always as identity primary key,
@@ -441,6 +445,47 @@ begin
                             'total',    round(v_sub + v_ship, 2));
 end $fn$;
 
+-- ---------- a delivered order becomes a bill ----------
+-- Stock was already taken at confirm, so this only writes the ledger rows.
+-- Idempotent: a second call returns the existing bill number.
+create or replace function record_order_sale(p_order_id bigint, p_actor text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare o orders%rowtype; v_bill text; v_sale_id bigint;
+begin
+  select * into o from orders where id = p_order_id;
+  if not found then return null; end if;
+
+  select bill_no into v_bill from sales where order_id = o.id;
+  if found then return v_bill; end if;
+
+  v_bill := to_char(now(), 'YYMMDD') || '-' || lpad(nextval('bill_seq')::text, 4, '0');
+
+  insert into sales (bill_no, local_ref, created_at, subtotal, discount, tax, total,
+                     paid_cash, paid_online, payment_mode, customer_name, customer_phone,
+                     note, cashier, source, order_id)
+  values (v_bill, 'order:' || o.order_no, now(), o.total, 0, 0, o.total,
+          case when o.payment_mode = 'cod' then o.total else 0 end,
+          case when o.payment_mode = 'cod' then 0 else o.total end,
+          o.payment_mode, o.customer_name, o.customer_phone,
+          'Online order ' || o.order_no, p_actor, 'online', o.id)
+  returning id into v_sale_id;
+
+  insert into sale_items (sale_id, product_id, name, barcode, qty, price, total)
+  select v_sale_id, product_id, name, barcode, qty, price, total
+    from order_items where order_id = o.id;
+
+  if o.shipping > 0 then
+    insert into sale_items (sale_id, product_id, name, barcode, qty, price, total)
+    values (v_sale_id, null, 'Delivery charge', null, 1, o.shipping, o.shipping);
+  end if;
+
+  return v_bill;
+end $fn$;
+
 -- ---------- the shop moves an order along ----------
 -- Stock leaves the shelf on 'confirmed', not when the order is placed: a COD
 -- order that never gets confirmed must not empty the counter's stock.
@@ -450,7 +495,7 @@ language plpgsql
 security definer
 set search_path = public
 as $fn$
-declare o orders%rowtype; it order_items%rowtype;
+declare o orders%rowtype; it order_items%rowtype; v_bill text;
 begin
   if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
   if p_status not in ('new','confirmed','packed','shipped','delivered','cancelled') then
@@ -462,6 +507,9 @@ begin
 
   select * into o from orders where id = p_order_id for update;
   if not found then raise exception 'order not found'; end if;
+  if o.status = 'delivered' and p_status <> 'delivered' then
+    raise exception 'a delivered order is already a bill — return it from Reports like any other bill';
+  end if;
 
   -- take stock the first time it is confirmed
   if p_status not in ('new', 'cancelled') and not o.stock_taken then
@@ -487,11 +535,16 @@ begin
     update orders set stock_taken = false where id = o.id;
   end if;
 
+  -- delivered = money in: the order becomes a bill, so Reports and the cash book see it
+  if p_status = 'delivered' then
+    v_bill := record_order_sale(o.id, p_actor);
+  end if;
+
   update orders
      set status = p_status, handled_by = p_actor, updated_at = now()
    where id = o.id;
 
-  return jsonb_build_object('ok', true, 'order_no', o.order_no, 'status', p_status);
+  return jsonb_build_object('ok', true, 'order_no', o.order_no, 'status', p_status, 'bill_no', v_bill);
 end $fn$;
 
 -- ---------- security ----------
@@ -512,7 +565,11 @@ end $do$;
 create policy p_orders_read on orders      for select to authenticated using (is_staff());
 create policy p_oitems_read on order_items for select to authenticated using (is_staff());
 
+revoke all on function record_order_sale(bigint, text)          from public, anon, authenticated;
 revoke all on function place_order(jsonb)                       from public;
 revoke all on function set_order_status(bigint, text, text)     from public, anon;
 grant  execute on function place_order(jsonb)                   to anon, authenticated;
 grant  execute on function set_order_status(bigint, text, text) to authenticated;
+
+-- orders delivered before this ledger link existed: give them their bills now
+select record_order_sale(id, handled_by) from orders where status = 'delivered';
