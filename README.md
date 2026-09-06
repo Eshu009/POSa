@@ -162,15 +162,26 @@ to clear.
 
 ---
 
-## Turning this into a real .apk later
+## The Android app (.apk)
 
-Not needed for daily use — the installed PWA behaves like an app. If you want a
-`.apk` file (to sideload, or to put on the Play Store):
+The app is a **TWA** — a thin Android shell around the live site. That means you
+never rebuild it: push a change, redeploy, and the installed app picks it up on
+next open. Same code, same database, same everything.
 
-1. Go to <https://www.pwabuilder.com>, paste your site address.
-2. Choose **Android → Generate**. Download the package.
+1. Go to <https://www.pwabuilder.com> and paste your site address.
+2. **Package For Stores → Android → Generate**. Keep the package ID as
+   `app.netlify.silpapos` — it must match `.well-known/assetlinks.json` in this repo.
+3. Download the zip. Inside it are `app-release-signed.apk` and `assetlinks.json`.
+4. **Keep `signing.keystore` and its password somewhere safe.** Lose it and you can
+   never update an app already installed from that build — you'd have to uninstall
+   and reinstall on every device.
+5. Copy the fingerprint out of the zip's `assetlinks.json` into
+   `.well-known/assetlinks.json` here, replacing `REPLACE_WITH_THE_FINGERPRINT_FROM_PWABUILDER`.
+   Commit and push. Without this the app opens with a browser address bar across the top.
+6. Send the `.apk` to the phone, tap it, allow *install from unknown sources*.
 
-Free. The code stays exactly the same.
+Play Store is optional and costs a one-time $25 developer fee. Sideloading is free
+and enough for a shop's own devices.
 
 ---
 
@@ -197,6 +208,7 @@ in one place. It needs one extra piece: a policy that lets the public *read* pro
 | `items.js` | Stock, barcodes, label sheet. |
 | `reports.js` | Day summary, cash book, exports. |
 | `sw.js` | Makes it work offline. |
+| `.well-known/assetlinks.json` | Proves the Android app owns this domain, so it opens without a browser bar. |
 | `test.mjs` | `node test.mjs` — checks the bill maths. |
 
 ---

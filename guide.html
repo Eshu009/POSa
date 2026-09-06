@@ -403,7 +403,8 @@ Paid by                    Cash
 
   <div class="task">
     <h3>A real .apk file</h3>
-    <p>The installed app already behaves like one. If you want an actual file to sideload or put on the Play Store, paste your address into <a href="https://www.pwabuilder.com" target="_blank" rel="noopener">pwabuilder.com</a> and choose <b>Android → Generate</b>. Free, and the code stays exactly as it is.</p>
+    <p>The installed app already behaves like one. For an actual file to sideload, paste your address into <a href="https://www.pwabuilder.com" target="_blank" rel="noopener">pwabuilder.com</a> and choose <b>Package For Stores → Android → Generate</b>. Keep the package ID as <code>app.netlify.silpapos</code> so it matches the <code>assetlinks.json</code> already in the repo.</p>
+    <p>It is a shell around this same site, so you never rebuild it — push a change and the installed app picks it up. Two things to get right: paste the fingerprint from the downloaded zip into <code>.well-known/assetlinks.json</code> and push, or the app opens with a browser bar across the top; and keep <code>signing.keystore</code> and its password safe, because losing it means you can never update an already-installed copy.</p>
   </div>
 
   <div class="task">
