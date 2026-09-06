@@ -43,12 +43,28 @@ Security, so nothing in the database can be read or written without signing in.
 Supabase → **Authentication → Users → Add user**. Create one for yourself and one
 for each employee (email + password, tick *Auto Confirm User*). Two or three is fine.
 
-There is no sign-up screen in the app on purpose — but Supabase allows public
-sign-up by default, so **turn it off**: **Authentication → Sign In / Providers →
-Email** → switch off *Allow new users to sign up*.
+There is no sign-up screen in the app on purpose. Two things lock it down —
+do both, they cover different failures:
 
-Without that, anyone who finds your site address can register an account and read
-and write your stock and sales. Do this before you put the site online.
+**a) Close public sign-up.** **Authentication → Sign In / Providers** → switch off
+*Allow new users to sign up*. Without it, anyone who finds your site address can
+register themselves an account.
+
+**b) Name your staff.** A login alone is not enough — the account must also be in
+the `staff` table. After creating your logins, run this once in the SQL editor:
+
+```sql
+insert into staff (user_id, note)
+select id, email from auth.users
+on conflict (user_id) do nothing;
+```
+
+Now even if a stranger does register, they get nothing: every table policy and
+every stock-changing function checks membership. To revoke someone later,
+`delete from staff where user_id = '...'` — no need to delete their login.
+
+While `staff` is empty the check falls back to "any logged-in user", so a fresh
+install works before you have run the insert and nobody can lock themselves out.
 
 ### 5. Put it online (free)
 

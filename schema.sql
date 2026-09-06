@@ -83,6 +83,31 @@ create table if not exists cash_entries (
 );
 create index if not exists cash_entries_day_idx on cash_entries (day);
 
+-- ---------- who is allowed in ----------
+-- A login alone is not enough: the account must also be listed here. Rows are
+-- added by you in the SQL editor, never through the API. While the table is
+-- empty this falls back to "any logged-in user", so a fresh install works
+-- before you have populated it and nobody can lock themselves out.
+create table if not exists staff (
+  user_id  uuid primary key references auth.users(id) on delete cascade,
+  note     text,
+  added_at timestamptz not null default now()
+);
+
+create or replace function is_staff()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+begin
+  if auth.uid() is null then return false; end if;
+  if to_regclass('public.staff') is null then return true; end if;
+  if not exists (select 1 from staff) then return true; end if;
+  return exists (select 1 from staff where user_id = auth.uid());
+end $fn$;
+
 -- ---------- one transaction per bill: sale + lines + stock + log ----------
 create or replace function create_sale(p jsonb)
 returns jsonb
@@ -95,6 +120,8 @@ declare
   it     jsonb;
   v_bill text;
 begin
+  if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
+
   -- replay-safe: an offline bill re-sent after reconnect must not double-charge
   select * into v_sale from sales where local_ref = p->>'local_ref';
   if found then
@@ -142,6 +169,8 @@ set search_path = public
 as $fn$
 declare it sale_items%rowtype; v_bill text;
 begin
+  if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
+
   select bill_no into v_bill from sales where id = p_sale_id and status = 'completed';
   if v_bill is null then
     return jsonb_build_object('ok', false, 'error', 'not found or already returned');
@@ -167,6 +196,8 @@ security definer
 set search_path = public
 as $fn$
 begin
+  if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
+
   update products set stock = stock + p_delta where id = p_product_id;
   insert into stock_log (product_id, delta, reason, actor)
   values (p_product_id, p_delta, coalesce(p_reason, 'adjust'), p_actor);
@@ -179,15 +210,23 @@ alter table sales        enable row level security;
 alter table sale_items   enable row level security;
 alter table stock_log    enable row level security;
 alter table cash_entries enable row level security;
+alter table staff        enable row level security;
 
 do $do$
 declare t text;
 begin
   foreach t in array array['settings','products','sales','sale_items','stock_log','cash_entries'] loop
     execute format('drop policy if exists staff_all on %I', t);
-    execute format('create policy staff_all on %I for all to authenticated using (true) with check (true)', t);
+    execute format('create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff())', t);
   end loop;
 end $do$;
+
+-- the roster itself is readable by staff and writable only from the SQL editor
+drop policy if exists staff_read on staff;
+create policy staff_read on staff for select to authenticated using (is_staff());
+
+revoke all on function is_staff()                                  from public, anon;
+grant  execute on function is_staff()                              to authenticated;
 
 revoke all on function create_sale(jsonb)                          from public, anon;
 revoke all on function return_sale(bigint, text)                   from public, anon;
