@@ -1,0 +1,438 @@
+<title>ShopOS Handbook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Karla:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --ground:#faf7f5;
+    --surface:#ffffff;
+    --surface-2:#f3ecee;
+    --ink:#241a1f;
+    --ink-soft:#6b5a60;
+    --line:#e6dee0;
+    --line-strong:#cfc0c5;
+    --berry:#7c2d51;
+    --brass:#966c1f;
+    --brass-soft:#f5ecd8;
+    --paper:#fdfcf8;
+    --good:#1f6f4d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#161114;
+      --surface:#1e181c;
+      --surface-2:#271f24;
+      --ink:#f2e8ec;
+      --ink-soft:#b3a1a9;
+      --line:#342b30;
+      --line-strong:#4a3d43;
+      --berry:#e08cb0;
+      --brass:#d6ac57;
+      --brass-soft:#2e2618;
+      --paper:#1b1619;
+      --good:#63c39a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#161114;
+    --surface:#1e181c;
+    --surface-2:#271f24;
+    --ink:#f2e8ec;
+    --ink-soft:#b3a1a9;
+    --line:#342b30;
+    --line-strong:#4a3d43;
+    --berry:#e08cb0;
+    --brass:#d6ac57;
+    --brass-soft:#2e2618;
+    --paper:#1b1619;
+    --good:#63c39a;
+  }
+
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:Karla,"Segoe UI",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.6;
+  }
+  .wrap{max-width:41rem;margin:0 auto;padding:2.5rem 1.25rem 5rem;}
+
+  /* ---------- masthead ---------- */
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--brass);margin:0 0 .9rem;
+  }
+  h1{
+    font-family:Fraunces,Georgia,serif;font-weight:700;
+    font-size:clamp(2.1rem,7vw,3rem);line-height:1.04;
+    letter-spacing:-.02em;margin:0 0 .6rem;text-wrap:balance;
+  }
+  .standfirst{font-size:1.0625rem;color:var(--ink-soft);margin:0;max-width:32rem;}
+
+  .facts{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));
+    gap:1px;background:var(--line);border:1px solid var(--line);
+    margin:2rem 0 0;border-radius:2px;overflow:hidden;
+  }
+  .facts div{background:var(--surface);padding:.85rem 1rem;}
+  .facts dt{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.625rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 .2rem;
+  }
+  .facts dd{margin:0;font-weight:700;font-size:.9375rem;}
+
+  /* ---------- section chrome ---------- */
+  .band{
+    display:flex;align-items:baseline;gap:.85rem;
+    margin:3.5rem 0 1.75rem;padding-bottom:.6rem;
+    border-bottom:2px solid var(--ink);
+  }
+  .band h2{
+    font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.4rem;
+    margin:0;letter-spacing:-.01em;
+  }
+  .band span{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);margin-left:auto;text-align:right;
+  }
+
+  /* ---------- the seven steps: order matters, so they are numbered ---------- */
+  ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;}
+  .step{
+    display:grid;grid-template-columns:2.25rem minmax(0,1fr);column-gap:1rem;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:3px;padding:1.1rem 1.15rem;
+  }
+  .num{
+    grid-row:1 / span 3;
+    width:2.25rem;height:2.25rem;border-radius:50%;
+    display:grid;place-items:center;
+    background:var(--brass-soft);color:var(--brass);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums;
+  }
+  .step h3{
+    font-family:Karla,sans-serif;font-weight:700;font-size:1.0625rem;
+    margin:.15rem 0 .4rem;letter-spacing:-.005em;
+  }
+  .step > *:not(.num){grid-column:2;}
+  .step p{margin:0 0 .6rem;}
+  .step p:last-of-type{margin-bottom:0;}
+  .step ul{margin:.1rem 0 .6rem;padding-left:1.1rem;}
+  .step li{margin-bottom:.3rem;}
+  .step.done{border-color:var(--line);opacity:.62;}
+  .step.done .num{background:var(--good);color:var(--surface);}
+
+  .tick{
+    display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;
+    margin-top:.9rem;font-size:.8125rem;color:var(--ink-soft);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    letter-spacing:.06em;text-transform:uppercase;user-select:none;
+  }
+  .tick input{width:1.05rem;height:1.05rem;accent-color:var(--good);margin:0;}
+  .tick:focus-within{outline:2px solid var(--berry);outline-offset:3px;border-radius:2px;}
+
+  /* ---------- daily work: no order, so no numbers ---------- */
+  .task{padding:1.4rem 0;border-bottom:1px solid var(--line);}
+  .task:last-child{border-bottom:0;}
+  .task h3{
+    font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.15rem;
+    margin:0 0 .45rem;
+  }
+  .task p{margin:0 0 .7rem;}
+  .task p:last-child{margin-bottom:0;}
+  .path{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8125rem;
+    background:var(--surface-2);padding:.1rem .4rem;border-radius:2px;
+  }
+
+  .ranked{list-style:none;margin:.2rem 0 .8rem;padding:0;
+          counter-reset:r;display:flex;flex-direction:column;gap:.7rem;}
+  .ranked li{padding-left:2.6rem;position:relative;}
+  .ranked li::before{
+    counter-increment:r;content:counter(r);
+    position:absolute;left:0;top:.1rem;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.75rem;font-weight:600;color:var(--brass);
+    border:1px solid var(--line-strong);border-radius:2px;
+    width:1.6rem;height:1.6rem;display:grid;place-items:center;
+  }
+  .ranked b{display:block;}
+
+  /* ---------- code ---------- */
+  pre{
+    background:var(--surface-2);border:1px solid var(--line);
+    border-radius:3px;padding:.9rem 1rem;overflow-x:auto;margin:.2rem 0 .8rem;
+  }
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8125rem;}
+  pre code{color:var(--ink);line-height:1.55;}
+  .cmt{color:var(--ink-soft);}
+  a{color:var(--berry);text-decoration-thickness:1px;text-underline-offset:2px;}
+  a:focus-visible{outline:2px solid var(--berry);outline-offset:2px;border-radius:2px;}
+
+  /* ---------- the receipt it actually prints ---------- */
+  figure{margin:1.5rem 0 0;display:flex;flex-direction:column;align-items:center;gap:.7rem;}
+  .receipt{
+    background:var(--paper);color:var(--ink);
+    border:1px solid var(--line-strong);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.6875rem;line-height:1.5;
+    width:min(19rem,100%);padding:1rem .9rem 1.4rem;
+    white-space:pre;overflow-x:auto;
+    box-shadow:0 1px 0 var(--line-strong);
+  }
+  figcaption{font-size:.8125rem;color:var(--ink-soft);text-align:center;max-width:26rem;}
+
+  /* ---------- buy list ---------- */
+  .buy{width:100%;border-collapse:collapse;margin:.4rem 0 0;font-size:.9375rem;}
+  .buy th,.buy td{text-align:left;padding:.6rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;}
+  .buy th{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:.625rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:400;
+  }
+  .buy td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700;}
+  .buy tr:last-child td{border-bottom:0;}
+
+  .note{
+    background:var(--surface);border-left:3px solid var(--brass);
+    padding:.9rem 1.1rem;margin:1.5rem 0 0;font-size:.9375rem;
+  }
+  .note b{color:var(--brass);}
+
+  footer{
+    margin-top:3.5rem;padding-top:1.4rem;border-top:1px solid var(--line);
+    font-size:.8125rem;color:var(--ink-soft);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .step,.step .num{transition:opacity .18s ease,background-color .18s ease,color .18s ease;}
+  }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Point of sale · imitation jewellery</p>
+  <h1>ShopOS Handbook</h1>
+  <p class="standfirst">Barcode billing, stock and a daily cash book for a two-or-three-person counter. Set it up once, then run it off the phone.</p>
+
+  <dl class="facts">
+    <div><dt>Running cost</dt><dd>₹0 / month</dd></div>
+    <div><dt>Setup time</dt><dd>About 20 min</dd></div>
+    <div><dt>Wifi drops</dt><dd>Billing continues</dd></div>
+  </dl>
+
+  <!-- ============ ordered: these seven only work in sequence ============ -->
+  <div class="band">
+    <h2>Set up once</h2>
+    <span>In order</span>
+  </div>
+
+  <ol class="steps" id="steps">
+
+    <li class="step" data-step="1">
+      <span class="num">1</span>
+      <h3>Create the database</h3>
+      <p>Sign up at <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> and press <b>New project</b>. Give it a name and a strong database password, and pick the region closest to the shop. It takes about two minutes to finish.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="2">
+      <span class="num">2</span>
+      <h3>Create the tables</h3>
+      <p>In the project, open <span class="path">SQL Editor → New query</span>. Copy everything out of <code>schema.sql</code>, paste it in, press <b>Run</b>. It should say <i>Success</i>.</p>
+      <p>Safe to run again later if you ever need to.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="3">
+      <span class="num">3</span>
+      <h3>Paste in your two keys</h3>
+      <p>In Supabase go to <span class="path">Project Settings → API</span> and copy the <b>Project URL</b> and the <b>anon / public</b> key (newer projects call it the <i>publishable</i> key, <code>sb_publishable_…</code> — either works). Copy <code>config.example.js</code> to <code>config.js</code> and fill it in:</p>
+<pre><code>export const CONFIG = {
+  SUPABASE_URL: 'https://abcdefgh.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOi....',
+};</code></pre>
+      <p>The key is meant to be public — it ships inside the page. The SQL you just ran locks every table behind a login, so the key on its own opens nothing.</p>
+      <p><b>But do one more thing:</b> in Supabase go to <span class="path">Authentication → Sign In / Providers → Email</span> and switch <b>off</b> “Allow new users to sign up”. Otherwise a stranger who finds your address can register themselves an account and walk straight into your stock and sales. You create staff logins in the dashboard, so you never need public sign-up.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="4">
+      <span class="num">4</span>
+      <h3>Make logins for your staff</h3>
+      <p><span class="path">Authentication → Users → Add user</span>. One for you, one for each employee — email and password, tick <i>Auto Confirm User</i>.</p>
+      <p>There is no sign-up screen in the app on purpose. Only you can create accounts.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="5">
+      <span class="num">5</span>
+      <h3>Put it online</h3>
+      <p>Open <a href="https://app.netlify.com/drop" target="_blank" rel="noopener">app.netlify.com/drop</a> and drag the whole <code>shopos</code> folder onto the page. No account needed. You get an address like <code>shiny-name-1234.netlify.app</code>.</p>
+      <p>It has to be an <b>https</b> address — the camera scanner and the install-as-app option both refuse to work without it.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="6">
+      <span class="num">6</span>
+      <h3>Install it on the counter device</h3>
+      <p>Open the address in <b>Chrome</b> → menu <b>⋮</b> → <b>Add to Home screen</b>. You get an icon and a full screen with no browser bars. On a counter PC, Chrome or Edge show an <b>Install</b> icon in the address bar.</p>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+    <li class="step" data-step="7">
+      <span class="num">7</span>
+      <h3>Fill in the shop details</h3>
+      <p>Sign in, open <b>Setup</b>:</p>
+      <ul>
+        <li><b>Shop name, address, phone</b> — these print on every bill.</li>
+        <li><b>UPI ID</b> — switches on the pay-by-QR screen. Leave blank to skip it.</li>
+        <li><b>Tax %</b> — 0 if you are not GST registered. If you are, imitation jewellery is normally 3%; keep <i>prices already include tax</i> ticked when your labelled price is what the customer pays.</li>
+        <li><b>Receipt width</b> — 58 mm for the common small thermal printer, A5 for a normal one.</li>
+      </ul>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </li>
+
+  </ol>
+
+  <!-- ============ unordered: daily work, any order ============ -->
+  <div class="band">
+    <h2>Then, every day</h2>
+    <span>Any order</span>
+  </div>
+
+  <div class="task">
+    <h3>Adding stock</h3>
+    <p><span class="path">Items → + Item</span>. A barcode number is generated for you — fill in the name, the price and how many pieces came in.</p>
+    <p>To restock something you already have, open it and use <b>Adjust stock</b> (<code>+12</code>, reason “new lot from supplier”). Every change is logged against whoever made it.</p>
+  </div>
+
+  <div class="task">
+    <h3>Printing barcode labels</h3>
+    <p><span class="path">Items → Print labels</span>. It lists your items with a sticker count already filled in from the stock number. Adjust it, choose whether the price prints, press <b>Print</b>. Three labels per row on an A4 sticker sheet.</p>
+    <p>One barcode is <b>per design, not per piece</b>. Ten identical jhumkas all share code 100001 and you print ten identical stickers. For jewellery a hang tag or a butterfly label around the earring post holds better than sticking onto the piece.</p>
+  </div>
+
+  <div class="task">
+    <h3>Selling</h3>
+    <p>Three ways to get an item into the cart, all on the <b>Sell</b> screen:</p>
+    <ol class="ranked">
+      <li><b>A USB or bluetooth scanner</b> Plug it in and scan. It behaves like a keyboard — types the code, presses enter. Fastest and most reliable by a distance.</li>
+      <li><b>The 📷 button</b> Uses the phone camera. Works, but slower, and it struggles with small curved labels.</li>
+      <li><b>Type part of the name</b> and tap the item. For when a label is torn.</li>
+    </ol>
+    <p>Then set the quantity, apply a discount (tap <b>₹</b> to switch to %), override a rate if you bargained, pick Cash / UPI / Card / Split, press <b>Charge</b>. The bill prints and stock comes down.</p>
+    <p>With a UPI ID saved, a QR appears first — the customer scans it with any UPI app and you confirm once the money lands. No gateway, no commission.</p>
+  </div>
+
+  <div class="task">
+    <h3>The cash book</h3>
+    <p><b>Reports</b> opens on today: bills, gross, discount, net, cash against online, pieces sold. Underneath it, the drawer:</p>
+    <ul>
+      <li><b>Morning</b> — add an <i>Opening cash</i> entry for the float.</li>
+      <li><b>Through the day</b> — add <i>Expense / cash out</i> for tea, auto, courier, anything taken out.</li>
+      <li><b>Closing</b> — count the drawer and add a <i>Closing count</i>. The app shows what it expected and whether you are short or in excess.</li>
+    </ul>
+  </div>
+
+  <div class="task">
+    <h3>Returns and backups</h3>
+    <p><span class="path">Reports → Bills</span> → tap the bill → <b>Return</b>. Stock goes back, the bill is struck through and drops out of the day's totals.</p>
+    <p><b>Full JSON backup</b> at the bottom of Reports downloads everything. Once a week into Google Drive. Supabase keeps its own backups; yours costs nothing.</p>
+  </div>
+
+  <figure>
+    <div class="receipt">     Sri Lakshmi Fancy &amp;
+          Jewellery
+     12 Main Bazaar Road
+       Tirupati 517501
+       Ph: 90000 12345
+--------------------------------
+Bill 260906-0042           kavya
+Sep 06, 03:13 PM
+Anitha 98765 43210
+--------------------------------
+Oxidised Jhumka - Peacock
+2 x 249.00               498.00
+Silk Thread Bangles (pair)
+1 x 199.00               199.00
+--------------------------------
+Subtotal                 697.00
+Discount                 -50.00
+Tax 3% (incl)             18.84
+TOTAL                   ₹647.00
+Paid by                    Cash
+--------------------------------
+  No exchange without bill.
+        Thank you!</div>
+    <figcaption>What the 58 mm thermal printer puts out. Switch to A5 in Setup if you bill on ordinary paper.</figcaption>
+  </figure>
+
+  <!-- ============ ============ -->
+  <div class="band">
+    <h2>When the internet drops</h2>
+    <span>It keeps billing</span>
+  </div>
+
+  <p>Sales queue on the device and a badge in the header counts how many are waiting. They upload on their own once the connection is back, and a queued bill cannot be charged twice — that is enforced inside the database, not by the app.</p>
+  <p>While offline you can sell but not add new items, and the bill carries a temporary number until it syncs.</p>
+  <div class="note"><b>One rule:</b> don't sign out while bills are still queued. The app warns you. Wait for the badge to clear.</div>
+
+  <!-- ============ ============ -->
+  <div class="band">
+    <h2>Worth buying</h2>
+    <span>Optional</span>
+  </div>
+
+  <table class="buy">
+    <thead><tr><th scope="col">Item</th><th scope="col">Why</th><th scope="col">Rough cost</th></tr></thead>
+    <tbody>
+      <tr><td><b>1D USB barcode scanner</b></td><td>The one upgrade that changes the day. Plug in, no setup.</td><td>₹1,000–1,500</td></tr>
+      <tr><td><b>58 mm thermal printer</b></td><td>Silent, no ink, receipt-sized. USB or bluetooth.</td><td>₹1,500–2,500</td></tr>
+      <tr><td><b>A4 sticker sheets</b></td><td>For the barcode labels. Any ordinary printer.</td><td>₹150 / pack</td></tr>
+      <tr><td><b>Everything else</b></td><td>Database, hosting, the app.</td><td>Free</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ ============ -->
+  <div class="band">
+    <h2>Later, if you want it</h2>
+    <span>Not needed now</span>
+  </div>
+
+  <div class="task">
+    <h3>A real .apk file</h3>
+    <p>The installed app already behaves like one. If you want an actual file to sideload or put on the Play Store, paste your address into <a href="https://www.pwabuilder.com" target="_blank" rel="noopener">pwabuilder.com</a> and choose <b>Android → Generate</b>. Free, and the code stays exactly as it is.</p>
+  </div>
+
+  <div class="task">
+    <h3>The online shop</h3>
+    <p>It reads the same product list this counter writes to, so stock stays in one place. It needs two additions — a rule letting the public read products but not write them, and a table for orders. Nothing in the current setup gets in the way.</p>
+  </div>
+
+  <footer>
+    <p>Supabase's free tier is 500 MB — decades of bills for a shop this size. A free project pauses after a full week of <i>zero</i> activity, which a shop that bills daily never reaches; if you close for a long holiday, open the app once or un-pause it from the dashboard.</p>
+    <p>Prices are editable at the counter on purpose, and selling below zero stock is allowed with a warning — better a bill that goes through than a customer waiting while you fix a count.</p>
+  </footer>
+
+</div>
+
+<script>
+  // Remembers which setup steps are ticked, on this device only.
+  const KEY = 'shopos.guide.done';
+  let done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { done = {}; }
+
+  document.querySelectorAll('.step').forEach((step) => {
+    const id = step.dataset.step;
+    const box = step.querySelector('input');
+    box.checked = !!done[id];
+    step.classList.toggle('done', box.checked);
+    box.addEventListener('change', () => {
+      step.classList.toggle('done', box.checked);
+      done[id] = box.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) { /* private window */ }
+    });
+  });
+</script>

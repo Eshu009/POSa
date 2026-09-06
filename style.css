@@ -1,0 +1,163 @@
+:root{
+  --bg:#f6f5f7; --card:#fff; --ink:#1d1b1e; --muted:#6b6772; --line:#e3e0e6;
+  --brand:#7c2d51; --brand-ink:#fff; --ok:#0f7b4f; --warn:#b45309; --bad:#b3261e;
+  --r:12px; --tap:46px;
+}
+*{box-sizing:border-box}
+/* author styles beat the UA sheet, so .login{display:grid} would defeat hidden */
+[hidden]{display:none !important}
+html,body{margin:0;height:100%}
+body{
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--ink);
+  -webkit-text-size-adjust:100%; overscroll-behavior:none;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:10px;padding:0 14px;min-height:var(--tap);background:#eceaef}
+button:active{transform:translateY(1px)}
+.primary{background:var(--brand);color:var(--brand-ink);font-weight:600}
+.ghost{background:transparent;border:1px solid var(--line)}
+.big{min-height:52px;font-size:17px}
+.tiny{min-height:32px;padding:0 8px;font-size:14px}
+input,select,textarea{
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  min-height:var(--tap);background:#fff;width:100%
+}
+input[type=checkbox]{width:auto;min-height:auto;transform:scale(1.25);margin-right:8px}
+label{display:block;margin:10px 0;font-size:14px;color:var(--muted)}
+label input,label select,label textarea{margin-top:4px;color:var(--ink)}
+.chk{display:flex;align-items:center;color:var(--ink)}
+.muted{color:var(--muted)} .small{font-size:13px} .r{text-align:right}
+.sub{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.grow{flex:1} .pad{padding:16px}
+.err{color:var(--bad);font-size:14px;min-height:20px}
+h3{margin:22px 0 8px;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+
+/* ---------------- login ---------------- */
+.login{display:grid;place-items:center;min-height:100%;padding:20px}
+.card{background:var(--card);border-radius:var(--r);padding:22px;width:100%;max-width:380px;
+      box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card.wide{max-width:560px;margin:16px auto}
+.card h1{margin:0;font-size:26px;color:var(--brand)}
+.card button[type=submit]{width:100%;margin-top:14px}
+
+/* ---------------- shell ---------------- */
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--brand);color:#fff}
+header b{font-size:17px}
+header .muted{color:#f0dbe4}
+header .ghost{border-color:rgba(255,255,255,.35);color:#fff;min-height:36px;padding:0 10px}
+.pill{background:#fff;color:var(--brand);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+.pill.warn{background:#fde68a;color:#7c2d12}
+main{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.screen{display:none;padding:12px;max-width:1100px;margin:0 auto}
+.screen.active{display:block}
+#tabs{display:flex;border-top:1px solid var(--line);background:#fff;
+      padding-bottom:env(safe-area-inset-bottom)}
+#tabs button{flex:1;border-radius:0;background:transparent;color:var(--muted);min-height:56px;font-size:14px}
+#tabs button.on{color:var(--brand);font-weight:700;box-shadow:inset 0 3px 0 var(--brand)}
+
+.bar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.bar.tight{margin-top:-4px}
+.bar input,.bar select{flex:1;min-width:120px}
+.bar button{flex:0 0 auto}
+
+/* ---------------- sell ---------------- */
+.sell-grid{display:grid;gap:12px}
+@media(min-width:900px){.sell-grid{grid-template-columns:1fr 1fr;align-items:start}}
+.scanrow{display:flex;gap:8px}
+.scanrow input{font-size:18px}
+.scanrow button{flex:0 0 var(--tap);padding:0;font-size:20px}
+.results{margin-top:8px;display:grid;gap:6px;max-height:46vh;overflow:auto}
+.results .row{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);
+              border-radius:10px;padding:10px;text-align:left;width:100%;min-height:var(--tap)}
+.results .row:disabled{opacity:.5}
+.results .row .nm{flex:1;font-weight:600;font-size:15px}
+
+/* cart row: name on top, controls underneath — fits a 360px phone */
+.cart{background:#fff;border-radius:var(--r);overflow:hidden}
+.ci{padding:8px 10px;border-bottom:1px solid var(--line)}
+.ci:last-child{border-bottom:0}
+.ci-top{display:flex;align-items:flex-start;gap:8px}
+.ci-top .nm{flex:1;min-width:0;font-weight:600;font-size:15px}
+.ci-bot{display:flex;align-items:center;gap:8px;margin-top:6px}
+.qty{display:flex;gap:4px;align-items:center}
+.qty button{min-height:34px;width:34px;padding:0;font-size:18px;line-height:1}
+.qty input{width:46px;text-align:center;min-height:34px;padding:4px}
+.rate{display:flex;align-items:center;gap:2px;color:var(--muted);font-size:13px}
+.rate input{width:70px;text-align:right;min-height:34px;padding:4px 6px}
+.amt{margin-left:auto;font-size:16px;white-space:nowrap}
+.x{background:transparent;color:var(--bad);min-height:32px;padding:0 6px;font-size:18px}
+
+.totals{background:#fff;border-radius:var(--r);padding:12px;margin-top:10px}
+.totals>div{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+.totals .disc{display:flex;gap:6px;align-items:center}
+.totals .disc input{width:100px;text-align:right;min-height:38px;padding:6px 8px}
+.totals .grand{border-top:2px solid var(--ink);margin-top:6px;padding-top:10px;font-size:22px;font-weight:700}
+
+.pay{margin-top:10px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1px solid var(--line);background:#fff;font-size:14px}
+.seg button.on{background:var(--brand);color:#fff;border-color:var(--brand);font-weight:700}
+.split{display:flex;gap:8px;margin-top:8px}
+.split label{flex:1;margin:0}
+.cust{margin:10px 0;background:#fff;border-radius:10px;padding:10px}
+.cust summary{cursor:pointer;color:var(--muted);font-size:14px}
+.cust input{margin-top:8px}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions .primary{flex:1}
+
+/* ---------------- lists / cards ---------------- */
+.list{display:grid;gap:6px}
+.list .row{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);
+           border-radius:10px;padding:10px;min-height:var(--tap)}
+.list .row .nm{flex:1;min-width:0;font-weight:600;font-size:15px}
+.list .row.low{border-color:#f0b100;background:#fffbeb}
+.list .row.void{opacity:.55;text-decoration:line-through}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.cards .c{background:#fff;border-radius:var(--r);padding:12px}
+.cards .c b{display:block;font-size:20px;margin-top:2px}
+.cards .c.hi b{color:var(--brand)}
+
+/* ---------------- dialogs ---------------- */
+dialog{border:0;border-radius:var(--r);padding:16px;max-width:min(560px,94vw);width:100%}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#scanner{max-width:min(460px,94vw)}
+#scan-video{width:100%;border-radius:10px;background:#000;aspect-ratio:4/3;object-fit:cover}
+#modal-body h3{margin-top:0}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.modal-actions .primary{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qrbox{display:grid;place-items:center;gap:8px;text-align:center}
+.qrbox canvas,.qrbox img{width:230px;height:230px}
+
+#toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);z-index:99;
+       display:grid;gap:6px;pointer-events:none}
+#toast div{background:#1d1b1e;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;
+           box-shadow:0 3px 12px rgba(0,0,0,.25)}
+#toast div.bad{background:var(--bad)}
+
+/* ---------------- print ---------------- */
+#print-area{display:none}
+@media print{
+  body{background:#fff}
+  #app,#login,#toast,dialog{display:none !important}
+  #print-area{display:block}
+}
+/* receipt */
+.receipt{font:12px/1.35 "Courier New",monospace;color:#000;margin:0 auto;padding:2mm}
+.receipt.w58mm{width:56mm} .receipt.w80mm{width:76mm} .receipt.wA5{width:140mm;font-size:13px}
+.receipt h2{margin:0 0 2px;font-size:15px;text-align:center}
+.receipt .ctr{text-align:center}
+.receipt hr{border:0;border-top:1px dashed #000;margin:5px 0}
+.receipt table{width:100%;border-collapse:collapse}
+.receipt td{padding:1px 0;vertical-align:top}
+.receipt .r{text-align:right}
+.receipt .tot{font-size:15px;font-weight:bold}
+@page{margin:4mm}
+/* label sheet */
+.labels{display:grid;grid-template-columns:repeat(3,1fr);gap:2mm}
+.label{border:1px dotted #bbb;padding:1.5mm;text-align:center;break-inside:avoid}
+.label .ln{font:bold 9px/1.1 system-ui;height:2.2em;overflow:hidden}
+.label .lp{font:bold 11px/1.2 system-ui}
+.label svg{width:100%;height:12mm}

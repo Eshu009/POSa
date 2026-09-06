@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c2d51">
+<title>ShopOS POS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ------------------------------------------------------------ login -->
+<div id="login" class="login">
+  <form id="login-form" class="card">
+    <h1>ShopOS</h1>
+    <p class="muted" id="login-shop">Point of sale</p>
+    <label>Email <input type="email" id="li-email" autocomplete="username" required></label>
+    <label>Password <input type="password" id="li-pass" autocomplete="current-password" required></label>
+    <button class="primary big" type="submit">Sign in</button>
+    <p class="err" id="li-err"></p>
+    <p class="muted small">Staff accounts are created in your Supabase dashboard &rarr; Authentication &rarr; Users.</p>
+  </form>
+</div>
+
+<!-- ------------------------------------------------------------ app -->
+<div id="app" hidden>
+  <header>
+    <b id="hdr-shop">ShopOS</b>
+    <span class="grow"></span>
+    <span id="hdr-offline" class="pill warn" hidden>offline</span>
+    <span id="hdr-queue" class="pill warn" hidden></span>
+    <span class="muted small" id="hdr-user"></span>
+    <button class="ghost" id="btn-logout" title="Sign out">&#x23FB;</button>
+  </header>
+
+  <main>
+    <!-- ================================================== SELL -->
+    <section id="scr-sell" class="screen active">
+      <div class="sell-grid">
+        <div class="sell-left">
+          <div class="scanrow">
+            <input id="scan" placeholder="Scan barcode or type name / code" autocomplete="off" enterkeyhint="done">
+            <button class="ghost" id="btn-cam" title="Scan with camera">&#128247;</button>
+          </div>
+          <div id="results" class="results"></div>
+        </div>
+
+        <div class="sell-right">
+          <div id="cart-body" class="cart"></div>
+          <p id="cart-empty" class="muted pad">Cart is empty. Scan an item to start.</p>
+
+          <div class="totals">
+            <div><span>Subtotal</span><b id="t-sub">0</b></div>
+            <div>
+              <span>Discount</span>
+              <span class="disc">
+                <input id="t-disc" type="number" min="0" step="1" value="0" inputmode="decimal">
+                <button id="t-disc-mode" class="ghost tiny" title="Toggle amount / percent">&#8377;</button>
+              </span>
+            </div>
+            <div id="t-tax-row" hidden><span id="t-tax-label">Tax</span><b id="t-tax">0</b></div>
+            <div class="grand"><span>TOTAL</span><b id="t-total">0</b></div>
+          </div>
+
+          <div class="pay">
+            <div class="seg" id="pay-mode">
+              <button data-mode="cash" class="on">Cash</button>
+              <button data-mode="upi">UPI</button>
+              <button data-mode="card">Card</button>
+              <button data-mode="split">Split</button>
+            </div>
+            <div id="split-row" hidden class="split">
+              <label>Cash <input id="pay-cash" type="number" min="0" step="1" inputmode="decimal"></label>
+              <label>Online <input id="pay-online" type="number" min="0" step="1" inputmode="decimal" readonly></label>
+            </div>
+            <details class="cust">
+              <summary>Customer (optional)</summary>
+              <input id="cu-name" placeholder="Name">
+              <input id="cu-phone" placeholder="Phone" inputmode="tel">
+            </details>
+            <div class="actions">
+              <button class="ghost" id="btn-clear">Clear</button>
+              <button class="primary big" id="btn-charge">Charge</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== ITEMS -->
+    <section id="scr-items" class="screen">
+      <div class="bar">
+        <input id="it-search" placeholder="Search items" autocomplete="off">
+        <button class="primary" id="btn-new-item">+ Item</button>
+        <button class="ghost" id="btn-labels">Print labels</button>
+      </div>
+      <div class="bar tight">
+        <label class="chk"><input type="checkbox" id="it-lowonly"> Low stock only</label>
+        <span id="it-count" class="muted small"></span>
+      </div>
+      <div id="it-list" class="list"></div>
+    </section>
+
+    <!-- ================================================== REPORTS -->
+    <section id="scr-reports" class="screen">
+      <div class="bar">
+        <input type="date" id="rp-day">
+        <button class="ghost" id="rp-prev">&#8592;</button>
+        <button class="ghost" id="rp-next">&#8594;</button>
+        <span class="grow"></span>
+        <button class="ghost" id="rp-refresh">Refresh</button>
+      </div>
+      <div id="rp-summary" class="cards"></div>
+
+      <h3>Cash book</h3>
+      <div id="rp-cash"></div>
+      <div class="bar">
+        <select id="cb-kind">
+          <option value="opening">Opening cash</option>
+          <option value="out">Expense / cash out</option>
+          <option value="in">Other cash in</option>
+          <option value="close">Closing count</option>
+        </select>
+        <input id="cb-amt" type="number" step="1" min="0" placeholder="Amount" inputmode="decimal">
+        <input id="cb-note" placeholder="Note">
+        <button class="primary" id="cb-add">Add</button>
+      </div>
+
+      <h3>Bills</h3>
+      <div id="rp-bills" class="list"></div>
+
+      <h3>Low stock</h3>
+      <div id="rp-low" class="list"></div>
+
+      <h3>Backup &amp; export</h3>
+      <div class="bar">
+        <button class="ghost" id="ex-sales">Sales CSV (this day)</button>
+        <button class="ghost" id="ex-items">Items CSV</button>
+        <button class="ghost" id="ex-backup">Full JSON backup</button>
+      </div>
+    </section>
+
+    <!-- ================================================== SETTINGS -->
+    <section id="scr-settings" class="screen">
+      <form id="st-form" class="card wide">
+        <label>Shop name <input id="st-shopName"></label>
+        <label>Address <textarea id="st-address" rows="2"></textarea></label>
+        <label>Phone <input id="st-phone"></label>
+        <label>GSTIN (leave blank if not registered) <input id="st-gstin"></label>
+        <label>UPI ID (for the pay-by-QR screen) <input id="st-upiId" placeholder="name@bank"></label>
+        <label>Currency symbol <input id="st-currency" size="3"></label>
+        <label>Tax % on bills (0 = none) <input id="st-taxPercent" type="number" step="0.01" min="0"></label>
+        <label class="chk"><input type="checkbox" id="st-taxIncluded"> Prices already include tax</label>
+        <label>Low-stock alert at <input id="st-lowStock" type="number" step="1" min="0"></label>
+        <label>Receipt width
+          <select id="st-receiptWidth">
+            <option value="58mm">58 mm thermal</option>
+            <option value="80mm">80 mm thermal</option>
+            <option value="A5">A5 / A4 paper</option>
+          </select>
+        </label>
+        <label>Receipt footer line <input id="st-footer"></label>
+        <button class="primary" type="submit">Save</button>
+        <p class="muted small" id="st-msg"></p>
+      </form>
+    </section>
+  </main>
+
+  <nav id="tabs">
+    <button data-scr="sell" class="on">Sell</button>
+    <button data-scr="items">Items</button>
+    <button data-scr="reports">Reports</button>
+    <button data-scr="settings">Setup</button>
+  </nav>
+</div>
+
+<!-- ------------------------------------------------------------ overlays -->
+<dialog id="scanner">
+  <video id="scan-video" playsinline muted></video>
+  <p class="muted small" id="scan-msg">Point the camera at the barcode</p>
+  <button class="ghost" id="scan-close">Close</button>
+</dialog>
+
+<dialog id="modal"><div id="modal-body"></div></dialog>
+
+<div id="toast"></div>
+<div id="print-area"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

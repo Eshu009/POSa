@@ -1,0 +1,6 @@
+# Live Supabase keys. Copy config.example.js to config.js and fill it in.
+config.js
+
+# OS junk
+Thumbs.db
+.DS_Store
