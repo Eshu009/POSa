@@ -1,16 +1,26 @@
-import { sb, store, configured, loadSettings, saveSettings, loadProducts, flushOutbox, outbox, DEFAULT_SETTINGS } from './db.js';
+import { sb, store, configured, loadSettings, saveSettings, loadProducts, loadRole, isOwner,
+         loadStaff, setStaffRole, flushOutbox, outbox, DEFAULT_SETTINGS } from './db.js';
 import * as sell from './sell.js';
 import * as items from './items.js';
 import * as reports from './reports.js';
-import { $, $$, toast } from './ui.js';
+import { $, $$, esc, toast } from './ui.js';
 
 // ------------------------------------------------------------------ routing
 const SCREENS = { sell, items, reports, settings: { show: fillSettings } };
+const OWNER_ONLY = ['reports', 'settings'];
+
 export function go(name) {
+  if (OWNER_ONLY.includes(name) && !isOwner()) name = 'sell';
   $$('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.scr === name));
   $$('.screen').forEach((s) => s.classList.toggle('active', s.id === 'scr-' + name));
   $('main').scrollTop = 0;
   SCREENS[name]?.show?.();
+}
+
+function applyRole() {
+  $$('#tabs button').forEach((b) => {
+    if (OWNER_ONLY.includes(b.dataset.scr)) b.hidden = !isOwner();
+  });
 }
 
 // ------------------------------------------------------------------ settings screen
@@ -22,7 +32,38 @@ function fillSettings() {
     if (el.type === 'checkbox') el.checked = !!store.settings[k];
     else el.value = store.settings[k] ?? '';
   }
+  fillStaff();
 }
+async function fillStaff() {
+  const box = $('#st-staff');
+  if (!box) return;
+  const rows = await loadStaff();
+  box.innerHTML = rows.length ? rows.map((r) => `
+    <div class="row">
+      <span class="nm">${esc(r.note || r.user_id.slice(0, 8))}
+        <span class="sub">${r.user_id === store.user.id ? 'you' : ''}</span>
+      </span>
+      <select data-uid="${r.user_id}" style="width:auto"
+        ${r.user_id === store.user.id ? 'disabled title="You cannot change your own role"' : ''}>
+        <option value="owner"    ${r.role === 'owner'    ? 'selected' : ''}>Owner</option>
+        <option value="employee" ${r.role === 'employee' ? 'selected' : ''}>Employee</option>
+      </select>
+    </div>`).join('')
+    : '<p class="muted small">Roster is empty — every login is treated as an owner. Run the enrol SQL from the README.</p>';
+
+  box.onchange = async (e) => {
+    const sel = e.target.closest('select[data-uid]');
+    if (!sel) return;
+    try {
+      await setStaffRole(sel.dataset.uid, sel.value);
+      toast('Role updated');
+    } catch (err) {
+      toast(err.message, true);
+      fillStaff();
+    }
+  };
+}
+
 function wireSettings() {
   $('#st-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -54,7 +95,7 @@ function paintStatus() {
 }
 async function trySync() {
   const n = await flushOutbox();
-  if (n) { toast(`${n} offline bill${n > 1 ? 's' : ''} synced`); reports.show?.(); }
+  if (n) { toast(`${n} offline bill${n > 1 ? 's' : ''} synced`); if (isOwner()) reports.show?.(); }
   paintStatus();
 }
 
@@ -65,10 +106,12 @@ async function startApp(user) {
   $('#app').hidden = false;
   $('#hdr-user').textContent = user.email.split('@')[0];
 
-  await Promise.all([loadSettings(), loadProducts()]);
+  await Promise.all([loadSettings(), loadProducts(), loadRole()]);
   $('#hdr-shop').textContent = store.settings.shopName;
+  $('#hdr-user').textContent = user.email.split('@')[0] + (isOwner() ? '' : ' · staff');
   document.title = store.settings.shopName + ' · POS';
 
+  applyRole();
   sell.init(); items.init(); reports.init(); wireSettings();
   $$('#tabs button').forEach((b) => (b.onclick = () => go(b.dataset.scr)));
   $('#btn-logout').onclick = async () => {

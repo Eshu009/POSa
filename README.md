@@ -61,10 +61,34 @@ on conflict (user_id) do nothing;
 
 Now even if a stranger does register, they get nothing: every table policy and
 every stock-changing function checks membership. To revoke someone later,
-`delete from staff where user_id = '...'` — no need to delete their login.
+`delete from staff where note = 'their@email';` — no need to delete their login.
 
 While `staff` is empty the check falls back to "any logged-in user", so a fresh
 install works before you have run the insert and nobody can lock themselves out.
+
+### Owners and employees
+
+Everyone starts as an owner. Change a role in **Setup → Who can use this**, or in SQL:
+
+```sql
+update staff set role = 'employee' where note = 'kavya@shop.in';
+```
+
+|                          | Owner | Employee |
+|--------------------------|:-----:|:--------:|
+| Sell, print bills        |  yes  |   yes    |
+| Add items, adjust stock, print labels | yes | yes |
+| Reports, cash book, exports |  yes  |    —     |
+| Setup, roles             |  yes  |    —     |
+| Return a bill            |  yes  |    —     |
+
+The two tabs disappear for an employee, but that is only the convenience half.
+The database enforces the same split: an employee's login cannot read `sales`,
+`cash_entries` or `stock_log` and cannot call `return_sale`, so opening devtools
+or hitting the API directly gets them nothing either.
+
+Returns are owner-only on purpose — voiding a bill and pocketing the cash is the
+easiest way to skim a counter.
 
 ### 5. Put it online (free)
 

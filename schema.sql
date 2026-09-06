@@ -91,8 +91,12 @@ create index if not exists cash_entries_day_idx on cash_entries (day);
 create table if not exists staff (
   user_id  uuid primary key references auth.users(id) on delete cascade,
   note     text,
+  role     text not null default 'owner',
   added_at timestamptz not null default now()
 );
+alter table staff add column if not exists role text not null default 'owner';
+alter table staff drop constraint if exists staff_role_chk;
+alter table staff add  constraint staff_role_chk check (role in ('owner', 'employee'));
 
 create or replace function is_staff()
 returns boolean
@@ -106,6 +110,22 @@ begin
   if to_regclass('public.staff') is null then return true; end if;
   if not exists (select 1 from staff) then return true; end if;
   return exists (select 1 from staff where user_id = auth.uid());
+end $fn$;
+
+-- Owners get Reports (sales figures, cash book, exports) and Setup. Employees
+-- sell and manage stock, and that is all.
+create or replace function is_owner()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+begin
+  if auth.uid() is null then return false; end if;
+  if to_regclass('public.staff') is null then return true; end if;
+  if not exists (select 1 from staff) then return true; end if;
+  return exists (select 1 from staff where user_id = auth.uid() and role = 'owner');
 end $fn$;
 
 -- ---------- one transaction per bill: sale + lines + stock + log ----------
@@ -169,7 +189,7 @@ set search_path = public
 as $fn$
 declare it sale_items%rowtype; v_bill text;
 begin
-  if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
+  if not is_owner() then raise exception 'only an owner can return a bill' using errcode = '42501'; end if;
 
   select bill_no into v_bill from sales where id = p_sale_id and status = 'completed';
   if v_bill is null then
@@ -212,21 +232,42 @@ alter table stock_log    enable row level security;
 alter table cash_entries enable row level security;
 alter table staff        enable row level security;
 
+-- clear whatever is there, so this file stays safe to re-run
 do $do$
-declare t text;
+declare r record;
 begin
-  foreach t in array array['settings','products','sales','sale_items','stock_log','cash_entries'] loop
-    execute format('drop policy if exists staff_all on %I', t);
-    execute format('create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff())', t);
+  for r in select tablename, policyname from pg_policies
+            where schemaname = 'public'
+              and tablename in ('settings','products','sales','sale_items',
+                                'stock_log','cash_entries','staff')
+  loop
+    execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
   end loop;
 end $do$;
 
--- the roster itself is readable by staff and writable only from the SQL editor
-drop policy if exists staff_read on staff;
-create policy staff_read on staff for select to authenticated using (is_staff());
+-- everyone signed in and on the roster can sell
+create policy p_products  on products    for all    to authenticated using (is_staff()) with check (is_staff());
+create policy p_set_read  on settings    for select to authenticated using (is_staff());
+create policy p_staff_see on staff       for select to authenticated using (is_staff());
+
+-- an employee adds stock, so it must be able to write the audit line...
+create policy p_log_write on stock_log   for insert to authenticated with check (is_staff());
+
+-- ...but only an owner reads the money and the history
+create policy p_set_write on settings    for update to authenticated using (is_owner()) with check (is_owner());
+create policy p_sales     on sales       for select to authenticated using (is_owner());
+create policy p_saleitems on sale_items  for select to authenticated using (is_owner());
+create policy p_log_read  on stock_log   for select to authenticated using (is_owner());
+create policy p_cash      on cash_entries for all   to authenticated using (is_owner()) with check (is_owner());
+
+-- an owner changes roles, but cannot demote themselves and strand the shop
+create policy p_staff_set on staff for update to authenticated
+  using (is_owner() and user_id <> auth.uid()) with check (is_owner());
 
 revoke all on function is_staff()                                  from public, anon;
+revoke all on function is_owner()                                  from public, anon;
 grant  execute on function is_staff()                              to authenticated;
+grant  execute on function is_owner()                              to authenticated;
 
 revoke all on function create_sale(jsonb)                          from public, anon;
 revoke all on function return_sale(bigint, text)                   from public, anon;

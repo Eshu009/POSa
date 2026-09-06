@@ -12,6 +12,7 @@ export const sb = createClient(
 // ---------------------------------------------------------------- shared state
 export const store = {
   user: null,
+  role: 'owner',
   settings: {},
   products: [],
   byBarcode: new Map(),
@@ -74,6 +75,28 @@ export async function saveSettings(patch) {
   const { error } = await sb.from('settings').upsert({ id: 1, data: store.settings });
   if (error) throw error;
   return store.settings;
+}
+
+/** 'owner' or 'employee'. Falls back to owner when the roster is empty, which
+ *  matches is_owner() in the database. The tabs this hides are also blocked by
+ *  RLS, so hiding them is convenience, not the security boundary. */
+export async function loadRole() {
+  const { data, error } = await sb
+    .from('staff').select('role').eq('user_id', store.user.id).maybeSingle();
+  store.role = error || !data ? 'owner' : data.role;
+  return store.role;
+}
+
+export const isOwner = () => store.role === 'owner';
+
+export async function loadStaff() {
+  const { data, error } = await sb.from('staff').select('*').order('added_at');
+  return error ? [] : data;
+}
+
+export async function setStaffRole(userId, role) {
+  const { error } = await sb.from('staff').update({ role }).eq('user_id', userId);
+  if (error) throw error;
 }
 
 // ---------------------------------------------------------------- products
