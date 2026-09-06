@@ -341,6 +341,11 @@ create table if not exists orders (
 create index if not exists orders_status_idx on orders (status, created_at desc);
 create index if not exists orders_phone_idx  on orders (customer_phone, created_at desc);
 
+-- sales.order_id is declared above orders, so the link is made here
+alter table sales drop constraint if exists sales_order_fk;
+alter table sales add  constraint sales_order_fk
+  foreign key (order_id) references orders(id) on delete set null;
+
 create table if not exists order_items (
   id         bigint generated always as identity primary key,
   order_id   bigint not null references orders(id) on delete cascade,
