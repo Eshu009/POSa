@@ -170,7 +170,7 @@ next open. Same code, same database, same everything.
 
 1. Go to <https://www.pwabuilder.com> and paste your site address.
 2. **Package For Stores → Android → Generate**. Keep the package ID as
-   `app.netlify.silpapos` — it must match `.well-known/assetlinks.json` in this repo.
+   `app.netlify.silpapos.twa` — it must match `.well-known/assetlinks.json` in this repo.
 3. Download the zip. Inside it are `app-release-signed.apk` and `assetlinks.json`.
 4. **Keep `signing.keystore` and its password somewhere safe.** Lose it and you can
    never update an app already installed from that build — you'd have to uninstall
