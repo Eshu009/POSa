@@ -26,7 +26,7 @@ free Supabase database.
 
 1. In Supabase go to **Project Settings → API** (or **Data API**).
 2. Copy the **Project URL** and the **anon / public** key (newer projects call it the *publishable* key, `sb_publishable_…` — either works).
-3. Copy `config.example.js` to `config.js` and paste them in:
+3. Open `config.js` and paste them in:
 
 ```js
 export const CONFIG = {
@@ -187,7 +187,7 @@ in one place. It needs one extra piece: a policy that lets the public *read* pro
 | File | What it is |
 |---|---|
 | `schema.sql` | Run once in Supabase. Tables, the bill transaction, security rules. |
-| `config.example.js` | Template. Copy to `config.js` — that one is git-ignored so your keys stay off GitHub. |
+| `config.js` | Your Supabase URL and publishable key. The only file you edit. |
 | `index.html` | All four screens. |
 | `app.js` | Login, tabs, settings, offline sync. |
 | `ui.js` | Shared helpers: dialogs, printing, camera scanning. |

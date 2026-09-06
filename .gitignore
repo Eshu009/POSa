@@ -1,6 +1,6 @@
-# Live Supabase keys. Copy config.example.js to config.js and fill it in.
-config.js
+# NEVER commit a Supabase service_role / sb_secret_* key.
+# The anon / sb_publishable_* key in config.js is public by design — it is
+# served to every visitor in the browser — so it belongs in the repo.
 
-# OS junk
 Thumbs.db
 .DS_Store
