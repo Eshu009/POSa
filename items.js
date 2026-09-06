@@ -61,6 +61,7 @@ function form(p, preset) {
       <label>Alert when stock &le; <input id="f-low_stock" type="number" min="0" step="1"
         value="${v('low_stock', store.settings.lowStock)}" inputmode="decimal"></label>
     </div>
+    <label class="chk"><input type="checkbox" id="f-online" ${p ? (p.online !== false ? 'checked' : '') : 'checked'}> Show on the website</label>
     <datalist id="cats">${[...new Set(store.products.map((x) => x.category).filter(Boolean))]
       .map((c) => `<option value="${esc(c)}">`).join('')}</datalist>
     ${p ? `<div class="bar">
@@ -86,6 +87,7 @@ function readForm() {
     price: +g('price') || 0,
     cost: +g('cost') || 0,
     low_stock: +g('low_stock') || 0,
+    online: $('#f-online').checked,
   };
 }
 

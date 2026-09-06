@@ -31,6 +31,13 @@ export const DEFAULT_SETTINGS = {
   lowStock: 3,
   receiptWidth: '58mm',
   footer: 'Thank you! Visit again.',
+  // online shop
+  tagline: '',
+  whatsapp: '',
+  instagram: '',
+  imageBase: '',
+  shipFlat: 0,
+  shipFreeAbove: 0,
 };
 
 // ---------------------------------------------------------------- little utils

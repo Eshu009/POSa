@@ -104,6 +104,23 @@
       <div id="it-list" class="list"></div>
     </section>
 
+    <!-- ================================================== ORDERS -->
+    <section id="scr-orders" class="screen">
+      <div class="bar">
+        <div class="seg tight" id="or-filter" style="flex:1">
+          <button data-st="new" class="on">New</button>
+          <button data-st="confirmed">Confirmed</button>
+          <button data-st="packed">Packed</button>
+          <button data-st="shipped">Shipped</button>
+          <button data-st="all">All</button>
+        </div>
+        <button class="ghost" id="or-refresh">&#8635;</button>
+      </div>
+      <div id="or-list" class="list"></div>
+      <p class="muted small pad">Online orders land here. <b>Confirm</b> takes the stock off the shelf;
+        cancelling a confirmed order puts it back. Only an owner can cancel.</p>
+    </section>
+
     <!-- ================================================== REPORTS -->
     <section id="scr-reports" class="screen">
       <div class="bar">
@@ -163,6 +180,18 @@
           </select>
         </label>
         <label>Receipt footer line <input id="st-footer"></label>
+
+        <h3>Online shop</h3>
+        <label>Tagline (footer of the website) <input id="st-tagline" placeholder="Adornment for the everyday."></label>
+        <label>WhatsApp number (customers message this) <input id="st-whatsapp" inputmode="tel" placeholder="9000012345"></label>
+        <label>Instagram handle <input id="st-instagram" placeholder="silpasfashion"></label>
+        <label>Image folder URL <input id="st-imageBase" placeholder="https://shop.yourdomain.in/img/"></label>
+        <p class="muted small">Name each photo after the barcode &mdash; <code>100001.jpg</code> &mdash; and upload it there.
+          A <code>hero.jpg</code> in the same folder becomes the big picture at the top of the site.</p>
+        <div class="grid2">
+          <label>Delivery charge <input id="st-shipFlat" type="number" min="0" step="1"></label>
+          <label>Free delivery above <input id="st-shipFreeAbove" type="number" min="0" step="1"></label>
+        </div>
         <button class="primary" type="submit">Save</button>
         <p class="muted small" id="st-msg"></p>
       </form>
@@ -181,6 +210,7 @@
   <nav id="tabs">
     <button data-scr="sell" class="on">Sell</button>
     <button data-scr="items">Items</button>
+    <button data-scr="orders">Orders<span id="tab-orders-n" class="badge" hidden></span></button>
     <button data-scr="reports">Reports</button>
     <button data-scr="settings">Setup</button>
   </nav>

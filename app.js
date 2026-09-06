@@ -3,10 +3,11 @@ import { sb, store, configured, loadSettings, saveSettings, loadProducts, loadRo
 import * as sell from './sell.js';
 import * as items from './items.js';
 import * as reports from './reports.js';
+import * as orders from './orders.js';
 import { $, $$, esc, toast } from './ui.js';
 
 // ------------------------------------------------------------------ routing
-const SCREENS = { sell, items, reports, settings: { show: fillSettings } };
+const SCREENS = { sell, items, orders, reports, settings: { show: fillSettings } };
 const OWNER_ONLY = ['reports', 'settings'];
 
 export function go(name) {
@@ -94,6 +95,7 @@ function paintStatus() {
   $('#hdr-queue').textContent = n ? `${n} bill${n > 1 ? 's' : ''} to sync` : '';
 }
 async function trySync() {
+  orders.pollNew();
   const n = await flushOutbox();
   if (n) { toast(`${n} offline bill${n > 1 ? 's' : ''} synced`); if (isOwner()) reports.show?.(); }
   paintStatus();
@@ -112,7 +114,7 @@ async function startApp(user) {
   document.title = store.settings.shopName + ' · POS';
 
   applyRole();
-  sell.init(); items.init(); reports.init(); wireSettings();
+  sell.init(); items.init(); orders.init(); reports.init(); wireSettings();
   $$('#tabs button').forEach((b) => (b.onclick = () => go(b.dataset.scr)));
   $('#btn-logout').onclick = async () => {
     if (outbox.size() && !confirm('There are unsynced bills. Sign out anyway?')) return;

@@ -275,3 +275,244 @@ revoke all on function adjust_stock(bigint, numeric, text, text)   from public, 
 grant execute on function create_sale(jsonb)                        to authenticated;
 grant execute on function return_sale(bigint, text)                 to authenticated;
 grant execute on function adjust_stock(bigint, numeric, text, text) to authenticated;
+
+
+-- ============================================================================
+--  ONLINE SHOP  (Silpa's Fashion storefront)
+-- ============================================================================
+
+-- what appears on the website
+alter table products add column if not exists online boolean not null default true;
+create index if not exists products_online_idx on products (online) where online;
+
+-- Views are how the storefront reads: they run as their owner, so anonymous
+-- visitors need no policy on the base tables, and they expose only safe
+-- columns — never cost price, never the UPI id, never GSTIN.
+drop view if exists shop_products;
+create view shop_products as
+  select id, barcode, name, category, price, image_url, (stock > 0) as in_stock
+    from products
+   where active and online;
+grant select on shop_products to anon, authenticated;
+
+drop view if exists shop_settings;
+create view shop_settings as
+  select data->>'shopName'  as shop_name,
+         data->>'tagline'   as tagline,
+         data->>'phone'     as phone,
+         data->>'whatsapp'  as whatsapp,
+         data->>'instagram' as instagram,
+         data->>'address'   as address,
+         data->>'imageBase' as image_base,
+         data->>'currency'  as currency,
+         coalesce((data->>'shipFlat')::numeric, 0)      as ship_flat,
+         coalesce((data->>'shipFreeAbove')::numeric, 0) as ship_free_above
+    from settings where id = 1;
+grant select on shop_settings to anon, authenticated;
+
+create sequence if not exists order_seq start 1;
+
+create table if not exists orders (
+  id             bigint generated always as identity primary key,
+  order_no       text unique not null,
+  created_at     timestamptz not null default now(),
+  customer_name  text not null,
+  customer_phone text not null,
+  customer_email text,
+  address        text not null,
+  city           text,
+  pincode        text,
+  note           text,
+  subtotal       numeric(12,2) not null,
+  shipping       numeric(12,2) not null default 0,
+  total          numeric(12,2) not null,
+  payment_mode   text not null default 'cod',      -- cod | razorpay
+  payment_ref    text,
+  payment_status text not null default 'pending',  -- pending | paid | refunded
+  status         text not null default 'new',      -- new|confirmed|packed|shipped|delivered|cancelled
+  stock_taken    boolean not null default false,
+  handled_by     text,
+  updated_at     timestamptz not null default now()
+);
+create index if not exists orders_status_idx on orders (status, created_at desc);
+create index if not exists orders_phone_idx  on orders (customer_phone, created_at desc);
+
+create table if not exists order_items (
+  id         bigint generated always as identity primary key,
+  order_id   bigint not null references orders(id) on delete cascade,
+  product_id bigint references products(id) on delete set null,
+  name       text not null,
+  barcode    text,
+  qty        numeric(12,2) not null,
+  price      numeric(12,2) not null,
+  total      numeric(12,2) not null
+);
+create index if not exists order_items_order_idx on order_items (order_id);
+
+-- ---------- a visitor places an order ----------
+-- Runs for anon. Every price and line total is recomputed from products;
+-- nothing money-related is trusted from the browser.
+create or replace function place_order(p jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  it      jsonb;
+  prod    products%rowtype;
+  q       numeric;
+  v_no    text;
+  v_id    bigint;
+  v_sub   numeric := 0;
+  v_ship  numeric := 0;
+  v_name  text;
+  v_phone text;
+  v_addr  text;
+  v_count int;
+  s       jsonb;
+begin
+  v_name  := btrim(coalesce(p->>'customer_name', ''));
+  v_phone := regexp_replace(coalesce(p->>'customer_phone', ''), '[^0-9]', '', 'g');
+  v_addr  := btrim(coalesce(p->>'address', ''));
+
+  if length(v_name)  < 2  then raise exception 'Please enter your name'; end if;
+  if length(v_phone) < 10 then raise exception 'Please enter a valid 10-digit phone number'; end if;
+  if length(v_addr)  < 10 then raise exception 'Please enter your full delivery address'; end if;
+
+  v_count := jsonb_array_length(coalesce(p->'items', '[]'::jsonb));
+  if v_count = 0  then raise exception 'Your bag is empty'; end if;
+  if v_count > 40 then raise exception 'Too many items in one order'; end if;
+
+  -- flood guard: nobody legitimately places 4 orders in 10 minutes
+  if (select count(*) from orders
+       where customer_phone = v_phone
+         and created_at > now() - interval '10 minutes') >= 3 then
+    raise exception 'Too many orders from this number just now. Please call the shop.';
+  end if;
+
+  select data into s from settings where id = 1;
+  v_no := 'SF' || to_char(now(), 'YYMMDD') || '-' || lpad(nextval('order_seq')::text, 4, '0');
+
+  insert into orders (order_no, customer_name, customer_phone, customer_email,
+                      address, city, pincode, note, subtotal, shipping, total, payment_mode)
+  values (v_no, v_name, v_phone,
+          nullif(btrim(coalesce(p->>'customer_email', '')), ''),
+          v_addr,
+          nullif(btrim(coalesce(p->>'city', '')), ''),
+          nullif(regexp_replace(coalesce(p->>'pincode', ''), '[^0-9]', '', 'g'), ''),
+          nullif(btrim(coalesce(p->>'note', '')), ''),
+          0, 0, 0,
+          coalesce(nullif(p->>'payment_mode', ''), 'cod'))
+  returning id into v_id;
+
+  for it in select * from jsonb_array_elements(p->'items') loop
+    select * into prod from products
+     where id = (it->>'product_id')::bigint and active and online;
+    if not found then
+      raise exception 'Sorry, one of the items is no longer available. Please refresh and try again.';
+    end if;
+
+    q := floor(coalesce((it->>'qty')::numeric, 1));
+    if q < 1  then q := 1;  end if;
+    if q > 20 then q := 20; end if;
+
+    insert into order_items (order_id, product_id, name, barcode, qty, price, total)
+    values (v_id, prod.id, prod.name, prod.barcode, q, prod.price, round(prod.price * q, 2));
+
+    v_sub := v_sub + round(prod.price * q, 2);
+  end loop;
+
+  v_ship := coalesce((s->>'shipFlat')::numeric, 0);
+  if coalesce((s->>'shipFreeAbove')::numeric, 0) > 0
+     and v_sub >= (s->>'shipFreeAbove')::numeric then
+    v_ship := 0;
+  end if;
+
+  update orders
+     set subtotal = round(v_sub, 2),
+         shipping = round(v_ship, 2),
+         total    = round(v_sub + v_ship, 2)
+   where id = v_id;
+
+  return jsonb_build_object('order_no', v_no,
+                            'subtotal', round(v_sub, 2),
+                            'shipping', round(v_ship, 2),
+                            'total',    round(v_sub + v_ship, 2));
+end $fn$;
+
+-- ---------- the shop moves an order along ----------
+-- Stock leaves the shelf on 'confirmed', not when the order is placed: a COD
+-- order that never gets confirmed must not empty the counter's stock.
+create or replace function set_order_status(p_order_id bigint, p_status text, p_actor text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare o orders%rowtype; it order_items%rowtype;
+begin
+  if not is_staff() then raise exception 'not authorised' using errcode = '42501'; end if;
+  if p_status not in ('new','confirmed','packed','shipped','delivered','cancelled') then
+    raise exception 'unknown status %', p_status;
+  end if;
+  if p_status = 'cancelled' and not is_owner() then
+    raise exception 'only an owner can cancel an order' using errcode = '42501';
+  end if;
+
+  select * into o from orders where id = p_order_id for update;
+  if not found then raise exception 'order not found'; end if;
+
+  -- take stock the first time it is confirmed
+  if p_status not in ('new', 'cancelled') and not o.stock_taken then
+    for it in select * from order_items where order_id = o.id loop
+      if it.product_id is not null then
+        update products set stock = stock - it.qty where id = it.product_id;
+        insert into stock_log (product_id, delta, reason, ref, actor)
+        values (it.product_id, -it.qty, 'online order', o.order_no, p_actor);
+      end if;
+    end loop;
+    update orders set stock_taken = true where id = o.id;
+  end if;
+
+  -- give it back if a confirmed order is cancelled
+  if p_status = 'cancelled' and o.stock_taken then
+    for it in select * from order_items where order_id = o.id loop
+      if it.product_id is not null then
+        update products set stock = stock + it.qty where id = it.product_id;
+        insert into stock_log (product_id, delta, reason, ref, actor)
+        values (it.product_id, it.qty, 'order cancelled', o.order_no, p_actor);
+      end if;
+    end loop;
+    update orders set stock_taken = false where id = o.id;
+  end if;
+
+  update orders
+     set status = p_status, handled_by = p_actor, updated_at = now()
+   where id = o.id;
+
+  return jsonb_build_object('ok', true, 'order_no', o.order_no, 'status', p_status);
+end $fn$;
+
+-- ---------- security ----------
+alter table orders      enable row level security;
+alter table order_items enable row level security;
+
+do $do$
+declare r record;
+begin
+  for r in select tablename, policyname from pg_policies
+            where schemaname = 'public' and tablename in ('orders', 'order_items')
+  loop
+    execute format('drop policy if exists %I on public.%I', r.policyname, r.tablename);
+  end loop;
+end $do$;
+
+-- No anon policy at all: visitors reach orders only through place_order().
+create policy p_orders_read on orders      for select to authenticated using (is_staff());
+create policy p_oitems_read on order_items for select to authenticated using (is_staff());
+
+revoke all on function place_order(jsonb)                       from public;
+revoke all on function set_order_status(bigint, text, text)     from public, anon;
+grant  execute on function place_order(jsonb)                   to anon, authenticated;
+grant  execute on function set_order_status(bigint, text, text) to authenticated;

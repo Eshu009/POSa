@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="#A8874E" stroke-width="1.6" stroke-linecap="round">
+  <!-- Silpa's Fashion — jhumka mark -->
+  <circle cx="50" cy="50" r="46"/>
+  <circle cx="50" cy="20" r="3.2" fill="#A8874E" stroke="none"/>
+  <path d="M50 23.5 V29"/>
+  <path d="M31 48 A19 19 0 0 1 69 48 Z" fill="#A8874E" stroke="none"/>
+  <path d="M26 50.5 H74"/>
+  <path d="M32 51 V57.5 M38 51 V59.5 M44 51 V61 M50 51 V62 M56 51 V61 M62 51 V59.5 M68 51 V57.5"/>
+  <g fill="#A8874E" stroke="none">
+    <circle cx="32" cy="60.5" r="2.5"/>
+    <circle cx="38" cy="62.5" r="2.5"/>
+    <circle cx="44" cy="64"   r="2.5"/>
+    <circle cx="50" cy="65"   r="2.5"/>
+    <circle cx="56" cy="64"   r="2.5"/>
+    <circle cx="62" cy="62.5" r="2.5"/>
+    <circle cx="68" cy="60.5" r="2.5"/>
+  </g>
+</svg>

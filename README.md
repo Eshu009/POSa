@@ -225,11 +225,12 @@ and enough for a shop's own devices.
 
 ---
 
-## The online shop, later
+## The online shop
 
-The website reads from the same `products` table this POS writes to, so stock stays
-in one place. It needs one extra piece: a policy that lets the public *read* products
-(not write), plus an orders table. Nothing in the current schema blocks that.
+The `shop/` folder is the Silpa's Fashion storefront — a static site that reads the
+same `products` table and drops orders into **POS → Orders**. Upload it to any basic
+hosting; everything it shows is controlled from the POS. Full instructions, including
+how photos work (name the file after the barcode), are in [`shop/README.md`](shop/README.md).
 
 ---
 

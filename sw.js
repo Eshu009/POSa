@@ -1,7 +1,7 @@
-const V = 'shopos-v1';
+const V = 'shopos-v2';
 const SHELL = [
   './', 'index.html', 'style.css', 'config.js',
-  'app.js', 'ui.js', 'db.js', 'money.js', 'sell.js', 'items.js', 'reports.js',
+  'app.js', 'ui.js', 'db.js', 'money.js', 'sell.js', 'items.js', 'reports.js', 'orders.js',
   'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
 ];
 
